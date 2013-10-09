@@ -13,8 +13,9 @@ public class BitPlane {
 	
 	public void printPlane(){
 		for (int i = 0; i < plane.length; i++){
-			for (int j = 0 ; i < plane[0].length; j++){
-				System.out.print(plane[i][j]);
+			for (int j = 0 ; j  < plane[0].length; j++){
+				int val =  plane[i][j]? 1 : 0;
+				System.out.print(val);
 			}
 		}
 	}
