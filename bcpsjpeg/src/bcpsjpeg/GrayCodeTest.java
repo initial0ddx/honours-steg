@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+//test class for Gray Code module
 public class GrayCodeTest {
 
 	@Test

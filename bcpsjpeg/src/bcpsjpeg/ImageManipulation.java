@@ -11,7 +11,6 @@ public class ImageManipulation {
 	public BufferedImage getImage() throws IOException{
 		BufferedImage img = ImageIO.read(getClass().getResourceAsStream(""));
 		return img;
-		
 	}
 	
 	

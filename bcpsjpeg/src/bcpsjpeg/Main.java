@@ -4,6 +4,7 @@ import javax.imageio.ImageIO;
 
 import java.awt.image.PixelGrabber;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.BitSet;
 
@@ -12,7 +13,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 		
-		BufferedImage img = ImageIO.read(Main.class.getResourceAsStream("lena512.bmp"));
+		BufferedImage img = ImageIO.read(Main.class.getResourceAsStream("facebook small.bmp"));
 		int w = img.getWidth();
 		int h = img.getHeight();
 		
@@ -35,28 +36,39 @@ public class Main {
 		
 		
 		//divide the image into 24 bit planes
-	    for (int j = 0; j < h; j++) {
-	    	for (int i = 0; i < w; i++) {
+	    for (int j = 0; j < h; j++) { //for each row
+	    	for (int i = 0; i < w; i++) { //for each column
 	    		
 	    		//int cgc = GrayCode.convertToGray(pixels[j*w+i]); //generates the gray code equivalent of the pixel
-	    		int cgc = pixels[j*w+i];
-	    		byte[] bytes = new byte[3];
-	    		for (int y = 0; y < 3; y++) {
+	    		int cgc = pixels[j*w+i]; //the current pixel
+	    		System.out.println(cgc);
+	    		byte[] bytes = new byte[3]; //will hold the 3 bits of a 24bit image
+	    		for (int y = 0; y < 3; y++) { 
 	    			bytes[y] = (byte)(cgc >>> (y * 8));//a byte array representation of the pixel in CGC format
 	    		}
-	    		BitSet bits = BitSet.valueOf(bytes);
+	    		boolean[] bits = new boolean[24];
+	    		for (int k = 23; k>=0;k--){
+	    			bits[k] = (cgc & (1<<k)) !=0;
+	    		}
+	    		System.out.println(bits);
 	    		
 	    		for (int x = 0; x < 24; x++){//add pixel (CGC format) data to bit planes.
-	    			planes[x].setBit(i, j, bits.get(x));
+	    			planes[x].setBit(i, j, bits[x]);
 	    		}
 	    	}
 	    }
 	    
-	    System.out.println("Completed plane division");
-	    for (int x = 0; x < 24; x++){
-	    	System.out.println("plane: "+x);
-	    	planes[x].printPlane();
+	    planes[0].printPlane();
+	    System.out.println();
+	    planes[1].printPlane();
+	    
+	    for (int i = 0; i<24; i++){
+	    	BufferedImage planeImage =  planes[i].planeToImage();
+	    	ImageIO.write(planeImage, "bmp", new File("test"+i+".bmp"));
 	    }
+	    
+	    System.out.println("Completed plane division");
+
 	    
 	}
 	
