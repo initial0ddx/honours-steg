@@ -12,8 +12,8 @@ import javax.imageio.ImageIO;
 public class BitPlane {
 	private boolean[][] plane;
 	
-	public BitPlane(int w, int h){
-		plane = new boolean[w][h];
+	public BitPlane(int h, int w){
+		plane = new boolean[h][w];
 	}
 	
 	public void setBit(int row, int col, boolean b){
@@ -21,21 +21,31 @@ public class BitPlane {
 	}
 	
 	public void printPlane(){
-		for (int i = 0; i < plane.length; i++){
-			for (int j = 0 ; j  < plane[0].length; j++){
-				int val =  plane[i][j]? 1 : 0;
+		for (int row = 0; row < plane.length; row++){
+			for (int col = 0 ; col  < plane[0].length; col++){
+				int val =  plane[row][col]? 1 : 0;
 				System.out.print(val);
 			}
 		}
 	}
 	
+	public boolean[] plantToBoolArray(){
+		boolean[] b = new boolean[plane.length*plane[0].length];
+		for (int row = 0; row < plane.length; row++)
+			for (int col = 0; col < plane[0].length; col++){
+				b[row*plane[0].length+col] = plane[row][col];
+			}
+		return b;
+	}
+		
+	
 	public byte[] planeToByteArray(){
 		int size = plane.length*plane[0].length;
 		byte[] bytes = new byte[size];
 		int count = 0;
-		for (int i = 0; i < plane.length; i++){
-			for (int j = 0; j < plane[0].length; j++){
-				bytes[count] = (byte) (plane[i][j]? 1:0);
+		for (int row = 0; row < plane.length; row++){
+			for (int col = 0; col < plane[0].length; col++){
+				bytes[count] = (byte) (plane[row][col]? 1:0);
 				count++;
 			}
 		}
@@ -57,4 +67,19 @@ public class BitPlane {
 
 	}
 	
+	public int[] planeToIntArray(){
+		int [] pixels = new int[plane.length*plane[0].length];
+		for (int row = 0; row < plane.length; row++)
+			for (int col = 0; col < plane[0].length; col++)
+				pixels[row*plane[0].length+col] = plane[row][col]? 1:0;
+		return pixels;
+	}
+	
+	public int getWidth(){
+		return plane[0].length;
+	}
+	
+	public int getHeight(){
+		return plane.length;
+	}
 }

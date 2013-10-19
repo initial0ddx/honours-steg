@@ -1,3 +1,4 @@
+
 package bcpsjpeg;
 
 import javax.imageio.ImageIO;
@@ -6,7 +7,6 @@ import java.awt.image.PixelGrabber;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.BitSet;
 
 
 public class Main {
@@ -19,7 +19,7 @@ public class Main {
 		
 		BitPlane[] planes = new BitPlane[24]; //for 24bit images
 		for (int i = 0; i < 24 ; i++)
-			planes[i] = new BitPlane(w,h);
+			planes[i] = new BitPlane(h,w);
 		
 		System.out.print("image width: " + w + " height: "+h);
 		
@@ -36,12 +36,10 @@ public class Main {
 		
 		
 		//divide the image into 24 bit planes
-	    for (int j = 0; j < h; j++) { //for each row
-	    	for (int i = 0; i < w; i++) { //for each column
+	    for (int row = 0; row < h; row++) { //for each row
+	    	for (int col = 0; col < w; col++) { //for each column
 	    		
-	    		//int cgc = GrayCode.convertToGray(pixels[j*w+i]); //generates the gray code equivalent of the pixel
-	    		int cgc = pixels[j*w+i]; //the current pixel
-	    		System.out.println(cgc);
+	    		int cgc = GrayCode.convertToGray(pixels[row*w+col]); //generates the gray code equivalent of the pixel
 	    		byte[] bytes = new byte[3]; //will hold the 3 bits of a 24bit image
 	    		for (int y = 0; y < 3; y++) { 
 	    			bytes[y] = (byte)(cgc >>> (y * 8));//a byte array representation of the pixel in CGC format
@@ -49,21 +47,24 @@ public class Main {
 	    		boolean[] bits = new boolean[24];
 	    		for (int k = 23; k>=0;k--){
 	    			bits[k] = (cgc & (1<<k)) !=0;
-	    		}
-	    		System.out.println(bits);
-	    		
+	    		}	    		
 	    		for (int x = 0; x < 24; x++){//add pixel (CGC format) data to bit planes.
-	    			planes[x].setBit(i, j, bits[x]);
+	    			planes[x].setBit(row, col, bits[x]);
 	    		}
 	    	}
 	    }
 	    
-	    planes[0].printPlane();
-	    System.out.println();
-	    planes[1].printPlane();
-	    
+	    //generates an image per plane
 	    for (int i = 0; i<24; i++){
-	    	BufferedImage planeImage =  planes[i].planeToImage();
+	    	boolean[] b = planes[i].plantToBoolArray();
+	    	BufferedImage planeImage = new BufferedImage(planes[i].getWidth(), planes[i].getHeight(), BufferedImage.TYPE_BYTE_BINARY);
+	    	for (int row = 0; row < planes[i].getHeight(); row++)
+				for (int col = 0; col < planes[i].getWidth(); col++){
+					int val = b[row*planes[i].getWidth()+col]? 0:16777215;
+					planeImage.setRGB(col,row,val);
+				}
+	    	
+	    	//BufferedImage planeImage =  planes[i].planeToImage();
 	    	ImageIO.write(planeImage, "bmp", new File("test"+i+".bmp"));
 	    }
 	    
