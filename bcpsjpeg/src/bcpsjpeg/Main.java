@@ -10,6 +10,7 @@ import java.io.IOException;
 
 
 public class Main {
+	public static final double COMPLEXITY_THRESHOLD = 0.1;
 
 	public static void main(String[] args) throws IOException {
 		
@@ -56,7 +57,7 @@ public class Main {
 	    
 	    //generates an image per plane
 	    for (int i = 0; i<24; i++){
-	    	boolean[] b = planes[i].plantToBoolArray();
+	    	boolean[] b = planes[i].planeToBoolArray();
 	    	BufferedImage planeImage = new BufferedImage(planes[i].getWidth(), planes[i].getHeight(), BufferedImage.TYPE_BYTE_BINARY);
 	    	for (int row = 0; row < planes[i].getHeight(); row++)
 				for (int col = 0; col < planes[i].getWidth(); col++){
@@ -69,7 +70,15 @@ public class Main {
 	    }
 	    
 	    System.out.println("Completed plane division");
-
+	    
+	    for (int i = 0; i < planes.length; i++){
+	    	int count = 0;
+	    	while (planes[i].hasNextSegment()){
+	    		System.out.println("reacjed " + i);
+	    		BitPlane seg = planes[i].getNextSegment();
+	    		if (seg.complexity() >= COMPLEXITY_THRESHOLD) System.out.println("Segment: "+count + "for plane: " +i + "is complex");
+	    	}
+	    }
 	    
 	}
 	
