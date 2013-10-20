@@ -5,6 +5,10 @@ import javax.imageio.ImageIO;
 
 import java.awt.image.PixelGrabber;
 import java.awt.image.BufferedImage;
+import java.io.DataInputStream;
+import java.io.BufferedInputStream;
+import java.io.EOFException;
+import java.io.FileInputStream;
 import java.io.File;
 import java.io.IOException;
 
@@ -57,26 +61,48 @@ public class Main {
 	    
 	    //generates an image per plane
 	    for (int i = 0; i<24; i++){
-	    	boolean[] b = planes[i].planeToBoolArray();
-	    	BufferedImage planeImage = new BufferedImage(planes[i].getWidth(), planes[i].getHeight(), BufferedImage.TYPE_BYTE_BINARY);
-	    	for (int row = 0; row < planes[i].getHeight(); row++)
-				for (int col = 0; col < planes[i].getWidth(); col++){
-					int val = b[row*planes[i].getWidth()+col]? 0:16777215;
-					planeImage.setRGB(col,row,val);
-				}
-	    	
-	    	//BufferedImage planeImage =  planes[i].planeToImage();
-	    	ImageIO.write(planeImage, "bmp", new File("test"+i+".bmp"));
+	    	planes[i].planeToImage("plane" + i);
 	    }
 	    
 	    System.out.println("Completed plane division");
 	    
+	    boolean[][] wc = new boolean[8][8]; //wc as defined by Kawaguchi 1986
+	    boolean prev = false;
+	    for (int x = 1; x < 8; x++)
+	    	for(int y = 0; y < 8; y ++){
+	    		wc[x][y] = !prev;
+	    		prev = !prev;
+	    	}
+	    
+	    String dataFile = "message.txt";
+	    File file = new File(dataFile);
+		DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(dataFile)));
+	    
+		boolean[] data = new boolean[(int)file.length()*8];
+		
+		//turns file into bits
+		try{
+			while(true){
+				byte b;
+				for (int i = 0; i < data.length; i++){
+					b = in.readByte();
+					for (int j = 0; j < 8; j++){
+						data[i*8+j] = (b&(1<<j)) != 0;
+					}
+				}
+			}
+		} catch (EOFException e){
+		}
+		
+		//TODO split file into segments and calc complexity.
 	    for (int i = 0; i < planes.length; i++){
 	    	int count = 0;
 	    	while (planes[i].hasNextSegment()){
-	    		System.out.println("reacjed " + i);
 	    		BitPlane seg = planes[i].getNextSegment();
+	    		System.out.println(i + "-"+count+": "+seg.complexity());
+	    		seg.planeToImage("segment"+i+"-"+count);
 	    		if (seg.complexity() >= COMPLEXITY_THRESHOLD) System.out.println("Segment: "+count + "for plane: " +i + "is complex");
+	    		count++;
 	    	}
 	    }
 	    
