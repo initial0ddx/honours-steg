@@ -5,20 +5,15 @@ import javax.imageio.ImageIO;
 
 import java.awt.image.PixelGrabber;
 import java.awt.image.BufferedImage;
-import java.io.DataInputStream;
-import java.io.BufferedInputStream;
-import java.io.EOFException;
-import java.io.FileInputStream;
 import java.io.File;
 import java.io.IOException;
 
 
 public class Main {
-	public static final double COMPLEXITY_THRESHOLD = 0.1;
 
 	public static void main(String[] args) throws IOException {
 		
-		BufferedImage img = ImageIO.read(Main.class.getResourceAsStream("facebook small.bmp"));
+		BufferedImage img = ImageIO.read(Main.class.getResourceAsStream("lena512.bmp"));
 		int w = img.getWidth();
 		int h = img.getHeight();
 		
@@ -66,46 +61,76 @@ public class Main {
 	    
 	    System.out.println("Completed plane division");
 	    
-	    boolean[][] wc = new boolean[8][8]; //wc as defined by Kawaguchi 1986
-	    boolean prev = false;
-	    for (int x = 1; x < 8; x++)
-	    	for(int y = 0; y < 8; y ++){
-	    		wc[x][y] = !prev;
-	    		prev = !prev;
-	    	}
+
 	    
 	    String dataFile = "message.txt";
-	    File file = new File(dataFile);
-		DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(dataFile)));
+	    Payload payload = new Payload(dataFile);
 	    
-		boolean[] data = new boolean[(int)file.length()*8];
-		
-		//turns file into bits
-		try{
-			while(true){
-				byte b;
-				for (int i = 0; i < data.length; i++){
-					b = in.readByte();
-					for (int j = 0; j < 8; j++){
-						data[i*8+j] = (b&(1<<j)) != 0;
-					}
-				}
-			}
-		} catch (EOFException e){
-		}
-		
-		//TODO split file into segments and calc complexity.
-	    for (int i = 0; i < planes.length; i++){
-	    	int count = 0;
-	    	while (planes[i].hasNextSegment()){
-	    		BitPlane seg = planes[i].getNextSegment();
-	    		System.out.println(i + "-"+count+": "+seg.complexity());
-	    		seg.planeToImage("segment"+i+"-"+count);
-	    		if (seg.complexity() >= COMPLEXITY_THRESHOLD) System.out.println("Segment: "+count + "for plane: " +i + "is complex");
-	    		count++;
+	    int paycount = 0;
+	    int planecount =0;
+	    while (payload.hasNextSegment()){
+	    	BitPlane seg = payload.nextSegment();
+	    	System.out.println ("Payload segment "+ paycount++ +"'s compexity == "+seg.complexity());
+	    	
+	    	if (seg.complexity() < BitPlane.COMPLEXITY_THRESHOLD) {
+	    		seg.planeToImage("payload-nc-"+paycount);
+	    		seg.conjugate();
+	    		seg.setBit(7,7,true);
+	    		seg.planeToImage("payload-c-"+paycount);
+	    	} else
+	    		seg.setBit(7, 7, false);
+	    	
+	    	while(true){
+	    		boolean foundNoisySeg = planes[planecount].findNoisySegment();
+		    	if (foundNoisySeg) {
+		    		planes[planecount].writeToCurrentSeg(seg);
+		    		break;
+		    	}
+		    	planecount++;
+		    	if (planecount == 24){
+		    		System.out.println("Not enough space in image for payload storage");
+		    		return;
+		    	}
 	    	}
+	    	
 	    }
 	    
+	    System.out.println("Succesfully hidden message");
+	    System.out.println("img size: "+ (h*w));
+	    byte[] bytes = new byte[h*w*3];
+	    int byteCount = 0;
+	    for (int row = 0; row < h ; row ++)
+	    	for (int col = 0; col < w; col ++) {
+	    
+			    for (int i = 0,  j = 0,  k = 7; i < 24; i++ ){
+			    	//System.out.println("bytecount+j: " + (byteCount+j));
+			    	bytes[byteCount+j]  |=( planes[i].getBit(row, col) ? 1:0 )<< k--;
+			    	if (k < 0) { j++; k = 7;}
+			    }
+			    byteCount +=3;
+	    	}
+	    
+	    System.out.println("Succesfully created byte stream");
+
+	    BufferedImage stegImg = new BufferedImage(w,h,BufferedImage.TYPE_INT_RGB);
+	    
+	    //TODO bytes[1] should map to the 3 bytes which make up each pixel.
+	    byteCount = 0;
+	    for (int row = 0; row < h ; row ++)
+	    	for (int col = 0; col < w; col ++) {
+	    		//int r = ((bytes[byteCount+2] & 0xFF) | ((bytes[byteCount+1] & 0xFF) << 8) | ((bytes[byteCount] & 0x0F) << 16));
+	    		//int r = ((bytes[byteCount+2] ) | ((bytes[byteCount+1] ) << 8) | ((bytes[byteCount] ) << 16));
+	    		int r = (((bytes[byteCount] ) << 16) |  ((bytes[byteCount+1] ) << 8) | (bytes[byteCount+2] ) );
+
+
+	    		r = GrayCode.convertToBin(r);
+	    		stegImg.setRGB(col, row, r);
+	    		byteCount+=3;
+	    	}
+	    		ImageIO.write(stegImg, "bmp", new File("secret.bmp"));
+		
+	    System.out.println("Succesfully saved stegimg");
+
 	}
 	
 

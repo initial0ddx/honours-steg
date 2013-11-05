@@ -11,7 +11,8 @@ import javax.imageio.ImageIO;
 
 public class BitPlane {
 	private static final int MAX_SEGMENT_CHANGES = 64; //the number of changes (b+w border) in an 8x8 segment
-	
+	public static final double COMPLEXITY_THRESHOLD = 0.3;
+
 	private boolean[][] plane; 	//2d array to hold the bits as booleans
 	private int segmentRow; 	//holds the starting row of the current segment
 	private int segmentColumn;	//holds the starting column of the current segment
@@ -194,8 +195,7 @@ public class BitPlane {
 	 * @return maximum possible changes (b->w and w-b) in the plane
 	 */
 	private int maxChanges(){
-		if (plane.length == 8 && plane[0].length == 8) return MAX_SEGMENT_CHANGES;
-		return axisChanges(plane.length, plane[0].length) + axisChanges(plane[0].length, plane.length);
+		return 2 * plane.length * (plane.length -1); //(Nimi, Noda & Kawaguch)
 	}
 	
 	/**
@@ -238,5 +238,37 @@ public class BitPlane {
 				seg.setBit(x,y,getBit(segmentRow+x, segmentColumn+y));
 		
 		return seg;
+	}
+	
+	public void conjugate(){
+	    boolean[][] wc = new boolean[plane.length][plane[0].length]; //wc as defined by Kawaguchi 1986
+	    boolean prev = false;
+	    for (int x = 0; x < plane.length; x++)
+	    	for(int y = 0; y < plane[0].length; y ++){
+	    		if (y==0) wc[x][y] = prev;
+	    		else {
+	    			wc[x][y] = !prev;
+	    			prev = !prev;
+	    		}
+	    	}
+	    
+	    for (int x = 0; x < plane.length; x ++)
+	    	for (int y = 0; y < plane[0].length; y++)
+	    		plane[x][y] = plane[x][y] ^ wc[x][y];
+	}
+	
+	public void writeToCurrentSeg(BitPlane payload){
+		for (int x = 0; x < 8; x ++)
+			for (int y = 0; y< 8; y++)
+				plane[segmentRow+x][segmentColumn+y] = payload.getBit(x,y);
+		
+	}
+	
+	public boolean findNoisySegment(){
+		while(hasNextSegment()){
+			BitPlane seg = getNextSegment();
+			if (seg.complexity() >= COMPLEXITY_THRESHOLD) return true;
+		}
+		return false;
 	}
 }
